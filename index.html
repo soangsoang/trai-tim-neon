@@ -1,31 +1,6 @@
 
 
-<head>
-  <meta charset="UTF-8" />
-  <title>HEO</title>
-  <style>
-    html, body {
-      margin: 0;
-      background: black;
-      overflow: hidden;
-      height: 100%;
-      user-select: none;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-    }
-    canvas {
-      display: block;
-      background: black;
-    }
-  </style>
-</head>
-<body>
-<canvas id="canvas"></canvas>
-<script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let w = canvas.width = window.innerWidth;
+
 let h = canvas.height = window.innerHeight;
 
 window.addEventListener('resize', () => {
