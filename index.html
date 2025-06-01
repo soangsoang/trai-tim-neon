@@ -49,8 +49,8 @@ function heartFunc(t) {
 
 function createHeartParticles() {
   particles = [];
-  const scale = Math.min(w, h) / 30;
-  const baseParticleSize = Math.min(w, h) / 350; // Giảm kích thước hạt (nhỏ hơn)
+  const scale = Math.min(w, h) / 30 * 0.8; // giảm kích thước trái tim 80%
+  const baseParticleSize = Math.min(w, h) / 350; // Kích thước hạt vẫn nhỏ
   for (let i = 0; i < particleCount; i++) {
     const t = Math.random() * Math.PI * 2;
     const r = Math.pow(Math.random(), 0.5);
@@ -61,7 +61,7 @@ function createHeartParticles() {
       base: { x: hx * r, y: hy * r },
       angle: Math.random() * Math.PI * 2,
       speed: Math.random() * 0.02 + 0.005,
-      size: (Math.random() * 0.5 + 0.3) * baseParticleSize, // nhỏ hơn và range hạt nhỏ hơn
+      size: (Math.random() * 0.5 + 0.3) * baseParticleSize,
       life: 0,
       pos: { x: px, y: py },
       target: null,
@@ -105,13 +105,13 @@ function spawnMeteor() {
 
 const letterCanvas = document.createElement('canvas');
 const letterCtx = letterCanvas.getContext('2d');
-letterCanvas.width = 350;   // Giảm kích thước canvas chữ
-letterCanvas.height = 100;  // Giảm chiều cao
+letterCanvas.width = 350;
+letterCanvas.height = 100;
 
 function getLoveYouPoints() {
   letterCtx.clearRect(0, 0, letterCanvas.width, letterCanvas.height);
   letterCtx.fillStyle = 'white';
-  letterCtx.font = 'bold 60px Verdana';  // Giảm font size chữ
+  letterCtx.font = 'bold 60px Verdana';
   letterCtx.textBaseline = 'middle';
   letterCtx.textAlign = 'center';
   letterCtx.fillText('LOVE YOU', letterCanvas.width / 2, letterCanvas.height / 2);
@@ -143,8 +143,8 @@ canvas.addEventListener('click', () => {
   scatterStartTime = performance.now();
   for (const p of particles) {
     p.scattered = true;
-    p.pos.x = w / 2 + p.base.x * (Math.min(w, h) / 30);
-    p.pos.y = h / 2 + p.base.y * (Math.min(w, h) / 30);
+    p.pos.x = w / 2 + p.base.x * (Math.min(w, h) / 30 * 0.8);
+    p.pos.y = h / 2 + p.base.y * (Math.min(w, h) / 30 * 0.8);
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * 10 + 5;
     p.vx = Math.cos(angle) * speed;
@@ -197,10 +197,10 @@ function draw(time = performance.now()) {
   if (animationPhase === 'heart') {
     for (const p of particles) {
       p.life += 16.66;
-      p.angle += p.speed;
+      p.angle += p.speed * 1.5;   // tăng tốc độ chuyển động 1.5 lần
       const depth = Math.cos(p.angle);
       const jitter = Math.sin(p.angle * 2) * 0.3;
-      const scale = Math.min(w, h) / 30;
+      const scale = Math.min(w, h) / 30 * 0.8;
       const x = centerX + (p.base.x + jitter) * scale + depth * 6;
       const y = centerY + (p.base.y + jitter) * scale;
       p.pos.x = x;
