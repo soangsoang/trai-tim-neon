@@ -209,12 +209,13 @@ function draw(time = performance.now()) {
   const centerY = h / 2;
 
   if(animationPhase === 'heart') {
+    const scale = w < 600 ? 50 : 15; // Scale lớn hơn khi màn hình nhỏ
+
     for (const p of particles) {
       p.life += 16.66;
       p.angle += p.speed;
       const depth = Math.cos(p.angle);
       const jitter = Math.sin(p.angle * 2) * 0.3;
-      const scale = w < 600 ? 30 : 15; // Scale to lớn hơn trên màn hình nhỏ
       const x = centerX + (p.base.x + jitter) * scale + depth * 6;
       const y = centerY + (p.base.y + jitter) * scale;
       p.pos.x = x;
@@ -224,7 +225,7 @@ function draw(time = performance.now()) {
 
       ctx.beginPath();
       ctx.fillStyle = `rgba(255, 20, 147, ${alpha.toFixed(3)})`;
-      ctx.arc(x, y, p.size * (1 + depth / 2), 0, Math.PI * 2);
+      ctx.arc(x, y, p.size * (1.5 + depth), 0, Math.PI * 2);
       ctx.fill();
     }
   }
