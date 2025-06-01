@@ -17,7 +17,6 @@
     canvas {
       display: block;
       background: black;
-      touch-action: manipulation;
     }
   </style>
 </head>
@@ -26,7 +25,6 @@
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-
 let w = canvas.width = window.innerWidth;
 let h = canvas.height = window.innerHeight;
 
@@ -35,9 +33,9 @@ window.addEventListener('resize', () => {
   h = canvas.height = window.innerHeight;
 });
 
-// Giảm số lượng hạt để điện thoại mượt
-const particleCount = 3000;
-
+// ==== HEART PARTICLES ====
+let particles = [];
+const particleCount = 15000;
 const fadeDuration = 2000;
 
 let animationPhase = 'heart';
@@ -57,8 +55,6 @@ function heartFunc(t) {
   return { x, y };
 }
 
-let particles = [];
-
 function createHeartParticles() {
   particles = [];
   for (let i = 0; i < particleCount; i++) {
@@ -69,7 +65,7 @@ function createHeartParticles() {
       base: { x: hx * r, y: hy * r },
       angle: Math.random() * Math.PI * 2,
       speed: Math.random() * 0.02 + 0.005,
-      size: Math.random() * 2 + 1.5, // Hạt lớn hơn rõ hơn
+      size: Math.random() * 0.35 + 0.1, // hạt nhỏ hơn để rõ ràng
       life: 0,
       pos: {x: 0, y: 0},
       target: null,
@@ -150,6 +146,7 @@ function mapTextPoints(points) {
 
 const mappedLoveYouPoints = mapTextPoints(loveYouPoints);
 
+// ==== Sự kiện click ====
 canvas.addEventListener('click', () => {
   if(animationPhase !== 'heart') return;
 
@@ -158,8 +155,8 @@ canvas.addEventListener('click', () => {
 
   for (const p of particles) {
     p.scattered = true;
-    p.pos.x = w/2 + p.base.x * scale;
-    p.pos.y = h/2 + p.base.y * scale;
+    p.pos.x = w/2 + p.base.x * 20; // scale to lớn hơn cho điện thoại
+    p.pos.y = h/2 + p.base.y * 20;
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * 10 + 5;
     p.vx = Math.cos(angle) * speed;
@@ -168,15 +165,15 @@ canvas.addEventListener('click', () => {
   }
 });
 
+// ==== Animation chính ====
 function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-let scale = 0;
-
 function draw(time = performance.now()) {
   ctx.clearRect(0, 0, w, h);
 
+  // BG Stars
   for (const star of bgStars) {
     star.alpha += star.twinkleSpeed;
     if (star.alpha > 1 || star.alpha < 0) star.twinkleSpeed *= -1;
@@ -186,6 +183,7 @@ function draw(time = performance.now()) {
     ctx.fill();
   }
 
+  // Meteors
   if (meteors.length < 10 && Math.random() < 0.05) spawnMeteor();
   for (let i = meteors.length - 1; i >= 0; i--) {
     const m = meteors[i];
@@ -209,15 +207,13 @@ function draw(time = performance.now()) {
   const centerX = w / 2;
   const centerY = h / 2;
 
-  // Tính scale dựa vào chiều rộng canvas (điện thoại)
-  scale = w * 0.45; // khoảng 90% chiều rộng trái tim (vì hình trái tim ~0.5 chiều ngang chuẩn)
-
   if(animationPhase === 'heart') {
     for (const p of particles) {
       p.life += 16.66;
       p.angle += p.speed;
       const depth = Math.cos(p.angle);
       const jitter = Math.sin(p.angle * 2) * 0.3;
+      const scale = 20; // scale to hơn
       const x = centerX + (p.base.x + jitter) * scale + depth * 6;
       const y = centerY + (p.base.y + jitter) * scale;
       p.pos.x = x;
@@ -227,7 +223,7 @@ function draw(time = performance.now()) {
 
       ctx.beginPath();
       ctx.fillStyle = `rgba(255, 20, 147, ${alpha.toFixed(3)})`;
-      ctx.arc(x, y, p.size * (1.5 + depth), 0, Math.PI * 2);
+      ctx.arc(x, y, p.size * (1 + depth / 2), 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -297,8 +293,8 @@ function draw(time = performance.now()) {
     if(t >= 1) {
       animationPhase = 'heart';
       for(const p of particles) {
-        p.pos.x = centerX + p.base.x * scale;
-        p.pos.y = centerY + p.base.y * scale;
+        p.pos.x = centerX + p.base.x * 20;
+        p.pos.y = centerY + p.base.y * 20;
         p.vx = 0;
         p.vy = 0;
         p.target = null;
