@@ -6,8 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       background: black;
       overflow: hidden;
       height: 100%;
@@ -50,9 +49,8 @@ function heartFunc(t) {
 
 function createHeartParticles() {
   particles = [];
-  // Tính tỉ lệ scale theo màn hình
-  const scale = Math.min(w, h) / 30; // Kích thước trái tim
-  const baseParticleSize = Math.min(w, h) / 180; // Kích thước hạt, to vừa phải
+  const scale = Math.min(w, h) / 30;
+  const baseParticleSize = Math.min(w, h) / 350; // Giảm kích thước hạt (nhỏ hơn)
   for (let i = 0; i < particleCount; i++) {
     const t = Math.random() * Math.PI * 2;
     const r = Math.pow(Math.random(), 0.5);
@@ -63,7 +61,7 @@ function createHeartParticles() {
       base: { x: hx * r, y: hy * r },
       angle: Math.random() * Math.PI * 2,
       speed: Math.random() * 0.02 + 0.005,
-      size: (Math.random() * 0.7 + 0.6) * baseParticleSize, // hạt lớn hơn
+      size: (Math.random() * 0.5 + 0.3) * baseParticleSize, // nhỏ hơn và range hạt nhỏ hơn
       life: 0,
       pos: { x: px, y: py },
       target: null,
@@ -107,13 +105,13 @@ function spawnMeteor() {
 
 const letterCanvas = document.createElement('canvas');
 const letterCtx = letterCanvas.getContext('2d');
-letterCanvas.width = 700;
-letterCanvas.height = 200;
+letterCanvas.width = 350;   // Giảm kích thước canvas chữ
+letterCanvas.height = 100;  // Giảm chiều cao
 
 function getLoveYouPoints() {
   letterCtx.clearRect(0, 0, letterCanvas.width, letterCanvas.height);
   letterCtx.fillStyle = 'white';
-  letterCtx.font = 'bold 120px Verdana';
+  letterCtx.font = 'bold 60px Verdana';  // Giảm font size chữ
   letterCtx.textBaseline = 'middle';
   letterCtx.textAlign = 'center';
   letterCtx.fillText('LOVE YOU', letterCanvas.width / 2, letterCanvas.height / 2);
@@ -207,7 +205,6 @@ function draw(time = performance.now()) {
       const y = centerY + (p.base.y + jitter) * scale;
       p.pos.x = x;
       p.pos.y = y;
-      // Độ sáng tăng vừa phải (0.5 - 1.0)
       const baseAlpha = 0.5 + 0.5 * (depth + 1) / 2;
       const alpha = p.life < fadeDuration ? baseAlpha * (p.life / fadeDuration) : baseAlpha;
 
