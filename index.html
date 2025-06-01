@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HEO</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+      height: 100%;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    canvas {
+      display: block;
+      background: black;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let w = canvas.width = window.innerWidth;
+let h = canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+});
+
+// ==== HEART PARTICLES ====
+let particles = [];
+const particleCount = 15000;
+const fadeDuration = 2000;
+
+let animationPhase = 'heart';
+let scatterStartTime = 0;
+const scatterDuration = 2000;
+
+let formStartTime = 0;
+const formDuration = 3000;
+
+let formHoldDuration = 5000; // Giữ chữ LOVE YOU 5 giây trước khi scatter2
+let scatter2StartTime = 0;
+const scatter2Duration = 2000;
+
+function heartFunc(t) {
+  const x = 16 * Math.pow(Math.sin(t), 3);
+  const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+  return { x, y };
+}
+
+function createHeartParticles() {
+  particles = [];
+  for (let i = 0; i < particleCount; i++) {
+    const t = Math.random() * Math.PI * 2;
+    const r = Math.pow(Math.random(), 0.5);
+    const {x: hx, y: hy} = heartFunc(t);
+    particles.push({
+      base: { x: hx * r, y: hy * r },
+      angle: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.02 + 0.005,
+      size: Math.random() * 0.5 + 0.2,
+      life: 0,
+      pos: {x: 0, y: 0},
+      target: null,
+      scattered: false,
+      vx: 0,
+      vy: 0,
+    });
+  }
+}
+createHeartParticles();
+
+// ==== BACKGROUND STARS ====
+const bgStars = [];
+for (let i = 0; i < 200; i++) {
+  bgStars.push({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    radius: Math.random() * 1.5 + 0.5,
+    alpha: Math.random(),
+    twinkleSpeed: Math.random() * 0.02 + 0.005
+  });
+}
+
+// ==== FALLING METEORS ====
+const meteors = [];
+function spawnMeteor() {
+  meteors.push({
+    x: Math.random() * w,
+    y: Math.random() * -100,
+    vx: Math.random() * 4 + 2,
+    vy: Math.random() * 2 + 1,
+    length: Math.random() * 80 + 50,
+    alpha: 1,
+    fade: Math.random() * 0.01 + 0.005
+  });
+}
+
+// ==== TEXT FORMATION ====
+const letterCanvas = document.createElement('canvas');
+const letterCtx = letterCanvas.getContext('2d');
+letterCanvas.width = 700;
+letterCanvas.height = 200;
+
+function getLoveYouPoints() {
+  letterCtx.clearRect(0, 0, letterCanvas.width, letterCanvas.height);
+  letterCtx.fillStyle = 'white';
+  letterCtx.font = 'bold 120px Verdana';
+  letterCtx.textBaseline = 'middle';
+  letterCtx.textAlign = 'center';
+  letterCtx.fillText('LOVE YOU', letterCanvas.width / 2, letterCanvas.height / 2);
+
+  const imageData = letterCtx.getImageData(0, 0, letterCanvas.width, letterCanvas.height);
+  const points = [];
+
+  for (let y = 0; y < letterCanvas.height; y += 3) {
+    for (let x = 0; x < letterCanvas.width; x += 3) {
+      const index = (y * letterCanvas.width + x) * 4;
+      const alpha = imageData.data[index + 3];
+      if (alpha > 128) {
+        points.push({ x, y });
+      }
+    }
+  }
+  return points;
+}
+
+let loveYouPoints = getLoveYouPoints();
+
+function mapTextPoints(points) {
+  const mapped = [];
+  const offsetX = w / 2 - letterCanvas.width / 2;
+  const offsetY = h / 2 - letterCanvas.height / 2;
+  for (const p of points) {
+    mapped.push({ x: p.x + offsetX, y: p.y + offsetY });
+  }
+  return mapped;
+}
+
+const mappedLoveYouPoints = mapTextPoints(loveYouPoints);
+
+// ==== Sự kiện click ====
+canvas.addEventListener('click', () => {
+  if(animationPhase !== 'heart') return;
+
+  animationPhase = 'scatter';
+  scatterStartTime = performance.now();
+
+  // Giữ nguyên toàn bộ hạt, không cắt bớt
+  for (const p of particles) {
+    p.scattered = true;
+    p.pos.x = w/2 + p.base.x * 15;
+    p.pos.y = h/2 + p.base.y * 15;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 10 + 5;
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed;
+    p.target = null;
+  }
+});
+
+// ==== Animation chính ====
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function draw(time = performance.now()) {
+  ctx.clearRect(0, 0, w, h);
+
+  // BG Stars
+  for (const star of bgStars) {
+    star.alpha += star.twinkleSpeed;
+    if (star.alpha > 1 || star.alpha < 0) star.twinkleSpeed *= -1;
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, Math.max(0, star.alpha))})`;
+    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Meteors
+  if (meteors.length < 10 && Math.random() < 0.05) spawnMeteor();
+  for (let i = meteors.length - 1; i >= 0; i--) {
+    const m = meteors[i];
+    m.x += m.vx;
+    m.y += m.vy;
+    m.alpha -= m.fade;
+    if (m.alpha <= 0) meteors.splice(i, 1);
+    else {
+      ctx.beginPath();
+      const grad = ctx.createLinearGradient(m.x, m.y, m.x - m.length, m.y - m.length * 0.7);
+      grad.addColorStop(0, `rgba(255,255,255,${m.alpha})`);
+      grad.addColorStop(1, `rgba(255,255,255,0)`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.moveTo(m.x, m.y);
+      ctx.lineTo(m.x - m.length, m.y - m.length * 0.7);
+      ctx.stroke();
+    }
+  }
+
+  const centerX = w / 2;
+  const centerY = h / 2;
+
+  if(animationPhase === 'heart') {
+    for (const p of particles) {
+      p.life += 16.66;
+      p.angle += p.speed;
+      const depth = Math.cos(p.angle);
+      const jitter = Math.sin(p.angle * 2) * 0.3;
+      const scale = 15;
+      const x = centerX + (p.base.x + jitter) * scale + depth * 6;
+      const y = centerY + (p.base.y + jitter) * scale;
+      p.pos.x = x;
+      p.pos.y = y;
+      const baseAlpha = 0.5 + 0.5 * (depth + 1) / 2;
+      const alpha = p.life < fadeDuration ? baseAlpha * (p.life / fadeDuration) : baseAlpha;
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 20, 147, ${alpha.toFixed(3)})`;
+      ctx.arc(x, y, p.size * (1 + depth / 2), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  else if(animationPhase === 'scatter') {
+    const elapsed = time - scatterStartTime;
+    const t = Math.min(elapsed / scatterDuration, 1);
+    for (const p of particles) {
+      p.pos.x += p.vx * 0.98;
+      p.pos.y += p.vy * 0.98;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+      const alpha = 0.7 * (1 - t);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 20, 147, ${alpha.toFixed(3)})`;
+      ctx.arc(p.pos.x, p.pos.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if(t >= 1) {
+      animationPhase = 'formText';
+      formStartTime = time;
+      for(let i=0; i<particles.length; i++) {
+        const pt = mappedLoveYouPoints[i % mappedLoveYouPoints.length];
+        particles[i].target = { x: pt.x, y: pt.y };
+      }
+    }
+  }
+  else if(animationPhase === 'formText') {
+    const elapsed = time - formStartTime;
+    const t = Math.min(elapsed / formDuration, 1);
+    for (const p of particles) {
+      if(p.target){
+        p.pos.x = lerp(p.pos.x, p.target.x, t);
+        p.pos.y = lerp(p.pos.y, p.target.y, t);
+      }
+      const alpha = 0.7;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 20, 147, ${alpha})`;
+      ctx.arc(p.pos.x, p.pos.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if(elapsed > formDuration + formHoldDuration) {
+      animationPhase = 'scatter2';
+      scatter2StartTime = time;
+      // chuẩn bị tản ra
+      for(const p of particles) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 10 + 5;
+        p.vx = Math.cos(angle) * speed;
+        p.vy = Math.sin(angle) * speed;
+        p.target = null;
+      }
+    }
+  }
+  else if(animationPhase === 'scatter2') {
+    const elapsed = time - scatter2StartTime;
+    const t = Math.min(elapsed / scatter2Duration, 1);
+    for(const p of particles) {
+      p.pos.x += p.vx * 0.98;
+      p.pos.y += p.vy * 0.98;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+      const alpha = 0.7 * (1 - t);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 20, 147, ${alpha.toFixed(3)})`;
+      ctx.arc(p.pos.x, p.pos.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if(t >= 1) {
+      animationPhase = 'heart';
+      // Reset vị trí hạt về hình trái tim
+      for(const p of particles) {
+        p.pos.x = centerX + p.base.x * 15;
+        p.pos.y = centerY + p.base.y * 15;
+        p.vx = 0;
+        p.vy = 0;
+        p.target = null;
+        p.life = 0;
+      }
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+</body>
+</html>
