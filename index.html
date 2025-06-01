@@ -3,19 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <title>HEO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
     html, body {
       margin: 0;
+      padding: 0;
       background: black;
       overflow: hidden;
       height: 100%;
       user-select: none;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
     }
     canvas {
       display: block;
+      width: 100vw;
+      height: 100vh;
       background: black;
     }
   </style>
@@ -28,12 +29,6 @@ const ctx = canvas.getContext('2d');
 let w = canvas.width = window.innerWidth;
 let h = canvas.height = window.innerHeight;
 
-window.addEventListener('resize', () => {
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
-});
-
-// ==== HEART PARTICLES ====
 let particles = [];
 const particleCount = 15000;
 const fadeDuration = 2000;
@@ -41,11 +36,9 @@ const fadeDuration = 2000;
 let animationPhase = 'heart';
 let scatterStartTime = 0;
 const scatterDuration = 2000;
-
 let formStartTime = 0;
 const formDuration = 3000;
-
-let formHoldDuration = 5000; // Giữ chữ LOVE YOU 5 giây trước khi scatter2
+let formHoldDuration = 5000;
 let scatter2StartTime = 0;
 const scatter2Duration = 2000;
 
@@ -57,17 +50,22 @@ function heartFunc(t) {
 
 function createHeartParticles() {
   particles = [];
+  // Tính tỉ lệ scale theo màn hình
+  const scale = Math.min(w, h) / 30; // Kích thước trái tim
+  const baseParticleSize = Math.min(w, h) / 180; // Kích thước hạt, to vừa phải
   for (let i = 0; i < particleCount; i++) {
     const t = Math.random() * Math.PI * 2;
     const r = Math.pow(Math.random(), 0.5);
     const {x: hx, y: hy} = heartFunc(t);
+    const px = w / 2 + hx * r * scale;
+    const py = h / 2 + hy * r * scale;
     particles.push({
       base: { x: hx * r, y: hy * r },
       angle: Math.random() * Math.PI * 2,
       speed: Math.random() * 0.02 + 0.005,
-      size: Math.random() * 0.35 + 0.1, // hạt nhỏ hơn để rõ ràng
+      size: (Math.random() * 0.7 + 0.6) * baseParticleSize, // hạt lớn hơn
       life: 0,
-      pos: {x: 0, y: 0},
+      pos: { x: px, y: py },
       target: null,
       scattered: false,
       vx: 0,
@@ -77,7 +75,12 @@ function createHeartParticles() {
 }
 createHeartParticles();
 
-// ==== BACKGROUND STARS ====
+window.addEventListener('resize', () => {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+  createHeartParticles();
+});
+
 const bgStars = [];
 for (let i = 0; i < 200; i++) {
   bgStars.push({
@@ -89,7 +92,6 @@ for (let i = 0; i < 200; i++) {
   });
 }
 
-// ==== FALLING METEORS ====
 const meteors = [];
 function spawnMeteor() {
   meteors.push({
@@ -103,7 +105,6 @@ function spawnMeteor() {
   });
 }
 
-// ==== TEXT FORMATION ====
 const letterCanvas = document.createElement('canvas');
 const letterCtx = letterCanvas.getContext('2d');
 letterCanvas.width = 700;
@@ -119,12 +120,10 @@ function getLoveYouPoints() {
 
   const imageData = letterCtx.getImageData(0, 0, letterCanvas.width, letterCanvas.height);
   const points = [];
-
   for (let y = 0; y < letterCanvas.height; y += 3) {
     for (let x = 0; x < letterCanvas.width; x += 3) {
       const index = (y * letterCanvas.width + x) * 4;
-      const alpha = imageData.data[index + 3];
-      if (alpha > 128) {
+      if (imageData.data[index + 3] > 128) {
         points.push({ x, y });
       }
     }
@@ -133,30 +132,21 @@ function getLoveYouPoints() {
 }
 
 let loveYouPoints = getLoveYouPoints();
-
 function mapTextPoints(points) {
-  const mapped = [];
   const offsetX = w / 2 - letterCanvas.width / 2;
   const offsetY = h / 2 - letterCanvas.height / 2;
-  for (const p of points) {
-    mapped.push({ x: p.x + offsetX, y: p.y + offsetY });
-  }
-  return mapped;
+  return points.map(p => ({ x: p.x + offsetX, y: p.y + offsetY }));
 }
-
 const mappedLoveYouPoints = mapTextPoints(loveYouPoints);
 
-// ==== Sự kiện click ====
 canvas.addEventListener('click', () => {
-  if(animationPhase !== 'heart') return;
-
+  if (animationPhase !== 'heart') return;
   animationPhase = 'scatter';
   scatterStartTime = performance.now();
-
   for (const p of particles) {
     p.scattered = true;
-    p.pos.x = w/2 + p.base.x * 20; // scale to lớn hơn cho điện thoại
-    p.pos.y = h/2 + p.base.y * 20;
+    p.pos.x = w / 2 + p.base.x * (Math.min(w, h) / 30);
+    p.pos.y = h / 2 + p.base.y * (Math.min(w, h) / 30);
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * 10 + 5;
     p.vx = Math.cos(angle) * speed;
@@ -165,7 +155,6 @@ canvas.addEventListener('click', () => {
   }
 });
 
-// ==== Animation chính ====
 function lerp(a, b, t) {
   return a + (b - a) * t;
 }
@@ -173,17 +162,17 @@ function lerp(a, b, t) {
 function draw(time = performance.now()) {
   ctx.clearRect(0, 0, w, h);
 
-  // BG Stars
+  // Stars nền
   for (const star of bgStars) {
     star.alpha += star.twinkleSpeed;
     if (star.alpha > 1 || star.alpha < 0) star.twinkleSpeed *= -1;
     ctx.beginPath();
-    ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, Math.max(0, star.alpha))})`;
+    ctx.fillStyle = `rgba(255,255,255,${Math.max(0, Math.min(1, star.alpha))})`;
     ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Meteors
+  // Sao băng
   if (meteors.length < 10 && Math.random() < 0.05) spawnMeteor();
   for (let i = meteors.length - 1; i >= 0; i--) {
     const m = meteors[i];
@@ -207,17 +196,18 @@ function draw(time = performance.now()) {
   const centerX = w / 2;
   const centerY = h / 2;
 
-  if(animationPhase === 'heart') {
+  if (animationPhase === 'heart') {
     for (const p of particles) {
       p.life += 16.66;
       p.angle += p.speed;
       const depth = Math.cos(p.angle);
       const jitter = Math.sin(p.angle * 2) * 0.3;
-      const scale = 20; // scale to hơn
+      const scale = Math.min(w, h) / 30;
       const x = centerX + (p.base.x + jitter) * scale + depth * 6;
       const y = centerY + (p.base.y + jitter) * scale;
       p.pos.x = x;
       p.pos.y = y;
+      // Độ sáng tăng vừa phải (0.5 - 1.0)
       const baseAlpha = 0.5 + 0.5 * (depth + 1) / 2;
       const alpha = p.life < fadeDuration ? baseAlpha * (p.life / fadeDuration) : baseAlpha;
 
@@ -226,10 +216,8 @@ function draw(time = performance.now()) {
       ctx.arc(x, y, p.size * (1 + depth / 2), 0, Math.PI * 2);
       ctx.fill();
     }
-  }
-  else if(animationPhase === 'scatter') {
-    const elapsed = time - scatterStartTime;
-    const t = Math.min(elapsed / scatterDuration, 1);
+  } else if (animationPhase === 'scatter') {
+    const t = Math.min((time - scatterStartTime) / scatterDuration, 1);
     for (const p of particles) {
       p.pos.x += p.vx * 0.98;
       p.pos.y += p.vy * 0.98;
@@ -237,37 +225,35 @@ function draw(time = performance.now()) {
       p.vy *= 0.96;
       const alpha = 0.7 * (1 - t);
       ctx.beginPath();
-      ctx.fillStyle = `rgba(255, 20, 147, ${alpha.toFixed(3)})`;
+      ctx.fillStyle = `rgba(255,20,147,${alpha.toFixed(3)})`;
       ctx.arc(p.pos.x, p.pos.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
-    if(t >= 1) {
+    if (t >= 1) {
       animationPhase = 'formText';
       formStartTime = time;
-      for(let i=0; i<particles.length; i++) {
+      for (let i = 0; i < particles.length; i++) {
         const pt = mappedLoveYouPoints[i % mappedLoveYouPoints.length];
         particles[i].target = { x: pt.x, y: pt.y };
       }
     }
-  }
-  else if(animationPhase === 'formText') {
+  } else if (animationPhase === 'formText') {
     const elapsed = time - formStartTime;
     const t = Math.min(elapsed / formDuration, 1);
     for (const p of particles) {
-      if(p.target){
+      if (p.target) {
         p.pos.x = lerp(p.pos.x, p.target.x, t);
         p.pos.y = lerp(p.pos.y, p.target.y, t);
       }
-      const alpha = 0.7;
       ctx.beginPath();
-      ctx.fillStyle = `rgba(255, 20, 147, ${alpha})`;
+      ctx.fillStyle = `rgba(255,20,147,0.7)`;
       ctx.arc(p.pos.x, p.pos.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
-    if(elapsed > formDuration + formHoldDuration) {
+    if (elapsed > formDuration + formHoldDuration) {
       animationPhase = 'scatter2';
       scatter2StartTime = time;
-      for(const p of particles) {
+      for (const p of particles) {
         const angle = Math.random() * Math.PI * 2;
         const speed = Math.random() * 10 + 5;
         p.vx = Math.cos(angle) * speed;
@@ -275,37 +261,27 @@ function draw(time = performance.now()) {
         p.target = null;
       }
     }
-  }
-  else if(animationPhase === 'scatter2') {
-    const elapsed = time - scatter2StartTime;
-    const t = Math.min(elapsed / scatter2Duration, 1);
-    for(const p of particles) {
+  } else if (animationPhase === 'scatter2') {
+    const t = Math.min((time - scatter2StartTime) / scatter2Duration, 1);
+    for (const p of particles) {
       p.pos.x += p.vx * 0.98;
       p.pos.y += p.vy * 0.98;
       p.vx *= 0.96;
       p.vy *= 0.96;
       const alpha = 0.7 * (1 - t);
       ctx.beginPath();
-      ctx.fillStyle = `rgba(255, 20, 147, ${alpha.toFixed(3)})`;
+      ctx.fillStyle = `rgba(255,20,147,${alpha.toFixed(3)})`;
       ctx.arc(p.pos.x, p.pos.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
-    if(t >= 1) {
+    if (t >= 1) {
       animationPhase = 'heart';
-      for(const p of particles) {
-        p.pos.x = centerX + p.base.x * 20;
-        p.pos.y = centerY + p.base.y * 20;
-        p.vx = 0;
-        p.vy = 0;
-        p.target = null;
-        p.life = 0;
-      }
+      createHeartParticles();
     }
   }
 
   requestAnimationFrame(draw);
 }
-
 draw();
 </script>
 </body>
