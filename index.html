@@ -65,7 +65,7 @@ function createHeartParticles() {
       base: { x: hx * r, y: hy * r },
       angle: Math.random() * Math.PI * 2,
       speed: Math.random() * 0.02 + 0.005,
-      size: Math.random() * 0.5 + 0.2,
+      size: Math.random() * 1 + 0.5,
       life: 0,
       pos: {x: 0, y: 0},
       target: null,
@@ -156,8 +156,8 @@ canvas.addEventListener('click', () => {
   // Giữ nguyên toàn bộ hạt, không cắt bớt
   for (const p of particles) {
     p.scattered = true;
-    p.pos.x = w/2 + p.base.x * 15;
-    p.pos.y = h/2 + p.base.y * 15;
+    p.pos.x = w/2 + p.base.x * 60;
+    p.pos.y = h/2 + p.base.y * 60;
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * 10 + 5;
     p.vx = Math.cos(angle) * speed;
@@ -209,8 +209,7 @@ function draw(time = performance.now()) {
   const centerY = h / 2;
 
   if(animationPhase === 'heart') {
-    const scale = w < 600 ? 50 : 15; // Scale lớn hơn khi màn hình nhỏ
-
+    const scale = w < 600 ? 120 : 60; // To rất to trên điện thoại
     for (const p of particles) {
       p.life += 16.66;
       p.angle += p.speed;
@@ -297,8 +296,8 @@ function draw(time = performance.now()) {
       animationPhase = 'heart';
       // Reset vị trí hạt về hình trái tim
       for(const p of particles) {
-        p.pos.x = centerX + p.base.x * 15;
-        p.pos.y = centerY + p.base.y * 15;
+        p.pos.x = centerX + p.base.x * 60;
+        p.pos.y = centerY + p.base.y * 60;
         p.vx = 0;
         p.vy = 0;
         p.target = null;
