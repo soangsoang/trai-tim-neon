@@ -50,7 +50,7 @@ function heartFunc(t) {
 
 function createHeartParticles() {
   particles = [];
-  const scaleBase = Math.min(w, h) / 40;  // Tăng kích thước trái tim so với trước (trước là 50)
+  const scaleBase = Math.min(w, h) / 40;  // Kích thước trái tim giữ nguyên
   for (let i = 0; i < particleCount; i++) {
     const t = Math.random() * Math.PI * 2;
     const r = Math.pow(Math.random(), 0.5);
@@ -60,7 +60,7 @@ function createHeartParticles() {
     particles.push({
       base: { x: hx * r, y: hy * r },
       angle: Math.random() * Math.PI * 2,
-      speed: Math.random() * 0.04 + 0.01,
+      speed: Math.random() * 0.06 + 0.015, // Tăng tốc độ hạt từ (0.01-0.05) lên (0.015-0.075)
       size: Math.random() * 0.5 + 0.2,
       life: 0,
       pos: { x: px, y: py },
@@ -99,14 +99,14 @@ function spawnMeteor() {
 
 const letterCanvas = document.createElement('canvas');
 const letterCtx = letterCanvas.getContext('2d');
-// Giảm kích thước canvas chữ và font chữ để chữ không tràn viền
-letterCanvas.width = 500;
-letterCanvas.height = 140;
+// Thu nhỏ canvas và font chữ để chữ nhỏ hơn nữa
+letterCanvas.width = 380;
+letterCanvas.height = 110;
 
 function getLoveYouPoints() {
   letterCtx.clearRect(0, 0, letterCanvas.width, letterCanvas.height);
   letterCtx.fillStyle = 'white';
-  letterCtx.font = 'bold 80px Verdana';
+  letterCtx.font = 'bold 60px Verdana'; // Font nhỏ hơn (60px)
   letterCtx.textBaseline = 'middle';
   letterCtx.textAlign = 'center';
   letterCtx.fillText('LOVE YOU', letterCanvas.width / 2, letterCanvas.height / 2);
